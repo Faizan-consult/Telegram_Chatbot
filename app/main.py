@@ -4,9 +4,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# -----------------------------
-# 1) Environment & clients
-# -----------------------------
+# Environment & clients
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN")
@@ -22,9 +20,8 @@ TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 app = FastAPI(title="Week 2 Bot — Modes + Context")
 oai = OpenAI(api_key=OPENAI_API_KEY)
 
-# -----------------------------
-# 2) Memory & Modes
-# -----------------------------
+# Memory & Modes
+
 conversations = {}   # { chat_id: [ {role, content}, ... ] }
 user_modes = {}      # { chat_id: "general" }
 MAX_TURNS = 10
@@ -53,13 +50,8 @@ def append_and_trim(chat_id: int, role: str, content: str):
 def get_mode(chat_id: int) -> str:
     return user_modes.get(chat_id, DEFAULT_MODE)
 
+#  Helpers
 
-# -----------------------------
-# 3) Helpers
-# -----------------------------
-# -----------------------------
-# 3) Helpers
-# -----------------------------
 async def answer_callback_query(callback_query_id: str, text: str = None):
     async with httpx.AsyncClient(timeout=10) as http:
         payload = {"callback_query_id": callback_query_id}
@@ -95,9 +87,9 @@ def main_keyboard():
     }
 
 
-# -----------------------------
-# 4) Webhook
-# -----------------------------
+
+# Webhook
+
 @app.post("/webhook")
 async def webhook(req: Request):
     update = await req.json()
@@ -126,8 +118,7 @@ async def webhook(req: Request):
                 await answer_callback_query(cq_id, f"Mode set to {mode_choice}")
                 await send_message(chat_id, f"✅ Mode switched to *{mode_choice.title()}*", reply_markup=main_keyboard())
             return {"ok": True}
-
-    # Handle normal messages
+            
     message = update.get("message")
     if not message:
         return {"ok": True}
@@ -138,16 +129,13 @@ async def webhook(req: Request):
     if chat_id is None:
         return {"ok": True}
 
-    # Show typing
     await send_typing(chat_id)
 
     if not isinstance(text, str):
         await send_message(chat_id, "I can only read text messages for now 😊")
         return {"ok": True}
 
-    # -----------------------------
     # Commands
-    # -----------------------------
     if text.strip().lower().startswith("/start"):
         conversations.pop(chat_id, None)
         user_modes[chat_id] = DEFAULT_MODE
@@ -177,9 +165,9 @@ async def webhook(req: Request):
         return {"ok": True}
 
 
-    # -----------------------------
+
     # Store + Generate GPT reply
-    # -----------------------------
+    
     append_and_trim(chat_id, "user", text)
     mode = get_mode(chat_id)
     system_prompt = modes.get(mode, modes[DEFAULT_MODE])
