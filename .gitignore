@@ -4,12 +4,5 @@ __pycache__/
 
 # Environment files
 .env
-.venv/
-*.env
-
-# OS specific
-.DS_Store
 
 
-# Ngrok log (if any)
-ngrok.log
